@@ -1,7 +1,13 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/(register|login|leaderboard|submitLevel|submissions|approveLevel|moveUp|moveDown|deleteLevel)", "destination": "/server.js" },
-    { "source": "/(.*)", "destination": "/$1" }
+    {
+      "source": "/(register|login|leaderboard|submitLevel|submissions|approveLevel|moveUp|moveDown|deleteLevel)",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
   ]
 }
