@@ -1,13 +1,12 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const path = require("path");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
 // ===========================
-// DATABASE SETUP
+// SUPABASE SETUP
 // ===========================
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -18,34 +17,16 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 app.use(cors());
 app.use(bodyParser.json());
 
-// THIS LINE FIXES THE "1998 LOOK": It serves your CSS and JS files
-app.use(express.static(path.join(__dirname, ".")));
+// =======================
+// DATABASE API ROUTES ONLY
+// =======================
 
-// ==========================================
-// PAGE ROUTING (Fixes "Cannot GET" Errors)
-// ==========================================
-
-// Main Home Page
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// Other Pages (Automatically handles .html)
-app.get("/rules", (req, res) => res.sendFile(path.join(__dirname, "rules.html")));
-app.get("/send", (req, res) => res.sendFile(path.join(__dirname, "send.html")));
-app.get("/login.html", (req, res) => res.sendFile(path.join(__dirname, "login.html")));
-app.get("/register.html", (req, res) => res.sendFile(path.join(__dirname, "register.html")));
-
-// ==========================================
-// DATABASE API (THE LONG SCRIPT FEATURES)
-// ==========================================
-
-// Login & Register
+// User Auth
 app.post("/register", async (req, res) => {
     const { username, email, password } = req.body;
     try {
         const { data: existing } = await supabase.from("users").select("id").eq("email", email).maybeSingle();
-        if (existing) return res.json({ success: false, message: "Email exists" });
+        if (existing) return res.json({ success: false, message: "Email already exists" });
         await supabase.from("users").insert([{ username, email, password, score: 0 }]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
@@ -57,11 +38,11 @@ app.post("/login", async (req, res) => {
     try {
         const { data: user } = await supabase.from("users").select("*").eq("email", email).eq("password", password).maybeSingle();
         if (user) res.json({ success: true, username: user.username, admin: false });
-        else res.json({ success: false });
+        else res.json({ success: false, message: "Invalid login credentials" });
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// Leaderboard & Ranking (Up/Down)
+// Leaderboard & Ranking
 app.get("/leaderboard", async (req, res) => {
     const { data } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
     res.json(data || []);
@@ -89,7 +70,7 @@ app.post("/moveDown", async (req, res) => {
     res.json({ success: true });
 });
 
-// Admin Submissions & Approve
+// Admin & Submissions
 app.post("/submitLevel", async (req, res) => {
     const { name, id, creator, video } = req.body;
     await supabase.from("submissions").insert([{ name, level_id: id, creator, video }]);
