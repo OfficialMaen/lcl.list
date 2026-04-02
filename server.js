@@ -9,44 +9,15 @@ const app = express();
 // ===========================
 // SUPABASE SETUP
 // ===========================
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "maencopra@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 
-// ===========================
-// MIDDLEWARE
-// ===========================
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
-
-// ==========================================
-// STATIC FILES (THE FIX FOR THE 1998 LOOK)
-// ==========================================
-// This ensures style.css, script.js, and images are found
-app.use(express.static(path.join(__dirname, "/")));
-app.use("/style.css", express.static(path.join(__dirname, "style.css")));
-app.use("/script.js", express.static(path.join(__dirname, "script.js")));
-
-// ==========================================
-// PAGE ROUTING (FIXES THE 404/CANNOT GET)
-// ==========================================
-
-// Main page
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// All other HTML pages (send.html, login.html, etc.)
-app.get("/:page", (req, res) => {
-    let page = req.params.page;
-    if (!page.endsWith(".html")) page += ".html";
-    res.sendFile(path.join(__dirname, page), (err) => {
-        if (err) res.status(404).send("Page not found");
-    });
-});
+app.use(express.static(__dirname)); // This automatically serves style.css and script.js
 
 // =======================
 // DATABASE API ROUTES
@@ -91,7 +62,7 @@ app.get("/submissions", async (req, res) => {
 app.post("/approveLevel", async (req, res) => {
     const { index } = req.body;
     const { data: subs } = await supabase.from("submissions").select("*");
-    if (!subs[index]) return res.json({ success: false });
+    if (!subs || !subs[index]) return res.json({ success: false });
     const lvl = subs[index];
     const { count } = await supabase.from("leaderboard").select('*', { count: 'exact', head: true });
     await supabase.from("leaderboard").insert([{ name: lvl.name, level_id: lvl.level_id, creator: lvl.creator, video: lvl.video, position: (count || 0) + 1 }]);
@@ -106,7 +77,5 @@ app.post("/deleteLevel", async (req, res) => {
     res.json({ success: true });
 });
 
-// =======================
-// START FOR VERCEL
-// =======================
+// Start Server
 module.exports = app;
