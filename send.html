@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Send Level - LCL</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<span id="menuButton" onclick="openMenu()">☰</span>
+
+<div id="sidebar">
+  <span id="closeMenu" onclick="closeMenu()">✖</span>
+  <a href="index.html">Home</a>
+  <a href="rules.html">Rules</a>
+</div>
+
+<div id="content">
+  <h2>Submit Level</h2>
+
+  <input id="levelname" placeholder="Level name">
+  <input id="levelid" placeholder="Level id">
+  <input id="creator" placeholder="Creator (your name)">
+  <input id="video" placeholder="YouTube video link (required)">
+  <input id="thumbnail" placeholder="Optional thumbnail URL (leave empty to auto)">
+
+  <button onclick="sendLevel()">Send Level</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>LCL - Level Challenge List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<span id="menuButton" onclick="openMenu()">☰</span>
+
+<div id="sidebar">
+  <span id="closeMenu" onclick="closeMenu()">✖</span>
+  <a href="index.html">Home</a>
+  <a href="rules.html">Rules</a>
+  <a href="send.html">Send Level</a>
+  <a href="login.html">Login</a>
+  <a href="register.html">Register</a>
+  <a href="#" onclick="logout()">Logout</a>
+  <a href="https://discord.com/channels/1479132434661511248/1479132436079317087" target="_blank">Join Discord</a>
+</div>
+
+<div id="content">
+  <h1>LCL - Level Challenge List</h1>
+  <p id="userText">Not logged in</p>
+
+  <h2>Leaderboard</h2>
+  <div id="leaderboard"></div>
+
+  <div id="adminPanel" class="adminPanel" style="display:none">
+    <h2>Admin: Notifications</h2>
+    <div id="notifications"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<!-- levels UI talk to server; script.js includes polling and server calls -->
+</body>
+</html>

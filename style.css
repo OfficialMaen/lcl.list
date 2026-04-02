@@ -1,0 +1,28 @@
+/* style.css - simple dark theme */
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#0d0d0d;
+  color:#fff;
+}
+#menuButton{ position:fixed; left:12px; top:12px; font-size:26px; cursor:pointer; z-index:200; }
+#sidebar{
+  position:fixed; left:-280px; top:0; width:280px; height:100%;
+  background:#151515; padding-top:40px; transition:left .22s; z-index:150;
+  box-shadow:2px 0 20px rgba(0,0,0,0.6);
+}
+#sidebar a{ display:block; color:#fff; padding:12px 18px; text-decoration:none; border-bottom:1px solid #222; }
+#sidebar a:hover{ background:#222; color:#fff; }
+#closeMenu{ position:absolute; top:8px; right:12px; cursor:pointer; font-size:20px; }
+#content{ padding:60px 40px; max-width:1100px; margin-left:60px; }
+.adminPanel{ background:#111; padding:12px; border-radius:8px; margin-top:20px; }
+.rulesBox{ background:#151515; padding:18px; border-radius:8px; max-width:800px; }
+.level{ background:#1b1b1b; padding:14px; border-radius:10px; margin-bottom:12px; }
+.level img{ max-width:100%; border-radius:6px; display:block; margin:8px 0; }
+input{ display:block; padding:10px; margin:10px 0; width:320px; border-radius:6px; border:0; background:#222; color:#fff; }
+button{ padding:10px 14px; border-radius:6px; border:0; background:#333; color:#fff; cursor:pointer; margin-right:8px; }
+button:hover{ background:#222; }
+.notification{ background:#202020; padding:10px; border-radius:6px; margin-bottom:10px; }
+#leaderboard .level{ display:flex; gap:12px; align-items:flex-start; }
+.level-info{ flex:1; }
+.admin-buttons{ display:flex; gap:8px; margin-top:8px; }
