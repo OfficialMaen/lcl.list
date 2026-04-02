@@ -13,133 +13,100 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Admin credentials
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "maencopra@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 
 // ===========================
-// MIDDLEWARE & STATIC FILES
+// MIDDLEWARE
 // ===========================
 app.use(cors());
 app.use(bodyParser.json());
 
-// THIS LINE FIXES THE "1998 LOOK" (Makes style.css and script.js work)
-app.use(express.static(path.join(__dirname, ".")));
+// ==========================================
+// STATIC FILES (THE FIX FOR THE 1998 LOOK)
+// ==========================================
+// This ensures style.css, script.js, and images are found
+app.use(express.static(path.join(__dirname, "/")));
+app.use("/style.css", express.static(path.join(__dirname, "style.css")));
+app.use("/script.js", express.static(path.join(__dirname, "script.js")));
 
-// =======================
-// PAGE ROUTING (FIXES THE "CANNOT GET /SEND.HTML" ERROR)
-// =======================
+// ==========================================
+// PAGE ROUTING (FIXES THE 404/CANNOT GET)
+// ==========================================
 
-// Show index.html on home page
+// Main page
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Automatically handle any .html file (rules.html, send.html, login.html, etc.)
-app.get("/:page.html", (req, res) => {
-    res.sendFile(path.join(__dirname, req.params.page + ".html"));
+// All other HTML pages (send.html, login.html, etc.)
+app.get("/:page", (req, res) => {
+    let page = req.params.page;
+    if (!page.endsWith(".html")) page += ".html";
+    res.sendFile(path.join(__dirname, page), (err) => {
+        if (err) res.status(404).send("Page not found");
+    });
 });
 
 // =======================
-// DATABASE ROUTES
+// DATABASE API ROUTES
 // =======================
 
-// Register
 app.post("/register", async (req, res) => {
     const { username, email, password } = req.body;
     try {
         const { data: existing } = await supabase.from("users").select("id").eq("email", email).maybeSingle();
-        if (existing) return res.json({ success: false, message: "Email already exists" });
-        await supabase.from("users").insert([{ username, email, password, score: 0 }]);
-        res.json({ success: true, message: "Account created" });
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Database error" });
-    }
+        if (existing) return res.json({ success: false, message: "Email exists" });
+        await supabase.from("users").insert([{ username, email, password }]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// Login
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        return res.json({ success: true, username: "Admin", admin: true });
-    }
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) return res.json({ success: true, username: "Admin", admin: true });
     try {
         const { data: user } = await supabase.from("users").select("*").eq("email", email).eq("password", password).maybeSingle();
-        if (user) {
-            res.json({ success: true, username: user.username, admin: false });
-        } else {
-            res.json({ success: false, message: "Wrong email or password" });
-        }
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Database error" });
-    }
+        if (user) res.json({ success: true, username: user.username, admin: false });
+        else res.json({ success: false, message: "Invalid login" });
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// Get Leaderboard
 app.get("/leaderboard", async (req, res) => {
-    try {
-        const { data } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
-        res.json(data || []);
-    } catch (err) {
-        res.json([]);
-    }
+    const { data } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
+    res.json(data || []);
 });
 
-// Submit Level
 app.post("/submitLevel", async (req, res) => {
     const { name, id, creator, video } = req.body;
-    try {
-        await supabase.from("submissions").insert([{ name, level_id: id, creator, video }]);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false });
-    }
+    await supabase.from("submissions").insert([{ name, level_id: id, creator, video }]);
+    res.json({ success: true });
 });
 
-// Admin: Get Submissions
 app.get("/submissions", async (req, res) => {
-    try {
-        const { data } = await supabase.from("submissions").select("*");
-        res.json(data || []);
-    } catch (err) {
-        res.json([]);
-    }
+    const { data } = await supabase.from("submissions").select("*");
+    res.json(data || []);
 });
 
-// Admin: Approve
 app.post("/approveLevel", async (req, res) => {
     const { index } = req.body;
-    try {
-        const { data: subs } = await supabase.from("submissions").select("*");
-        if (!subs || !subs[index]) return res.json({ success: false });
-        const level = subs[index];
-        const { count } = await supabase.from("leaderboard").select('*', { count: 'exact', head: true });
-        const newPos = (count || 0) + 1;
-        await supabase.from("leaderboard").insert([{ name: level.name, level_id: level.level_id, creator: level.creator, video: level.video, position: newPos }]);
-        await supabase.from("submissions").delete().eq("id", level.id);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false });
-    }
+    const { data: subs } = await supabase.from("submissions").select("*");
+    if (!subs[index]) return res.json({ success: false });
+    const lvl = subs[index];
+    const { count } = await supabase.from("leaderboard").select('*', { count: 'exact', head: true });
+    await supabase.from("leaderboard").insert([{ name: lvl.name, level_id: lvl.level_id, creator: lvl.creator, video: lvl.video, position: (count || 0) + 1 }]);
+    await supabase.from("submissions").delete().eq("id", lvl.id);
+    res.json({ success: true });
 });
 
-// Admin: Delete
 app.post("/deleteLevel", async (req, res) => {
     const { index } = req.body;
-    try {
-        const { data: list } = await supabase.from("leaderboard").select("id").order("position", { ascending: true });
-        if (list && list[index]) {
-            await supabase.from("leaderboard").delete().eq("id", list[index].id);
-            res.json({ success: true });
-        } else {
-            res.json({ success: false });
-        }
-    } catch (err) {
-        res.status(500).json({ success: false });
-    }
+    const { data: list } = await supabase.from("leaderboard").select("id").order("position", { ascending: true });
+    if (list[index]) await supabase.from("leaderboard").delete().eq("id", list[index].id);
+    res.json({ success: true });
 });
 
 // =======================
-// EXPORT FOR VERCEL
+// START FOR VERCEL
 // =======================
 module.exports = app;
