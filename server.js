@@ -12,7 +12,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 app.use(cors());
 app.use(bodyParser.json());
 
-// ALL ROUTES START WITH /api/
+// Auth
 app.post("/api/register", async (req, res) => {
     const { username, email, password } = req.body;
     try {
@@ -33,11 +33,13 @@ app.post("/api/login", async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
+// Leaderboard
 app.get("/api/leaderboard", async (req, res) => {
     const { data } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
     res.json(data || []);
 });
 
+// Admin Logic (Long Script)
 app.post("/api/moveUp", async (req, res) => {
     const { index } = req.body;
     const { data: list } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
