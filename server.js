@@ -17,7 +17,30 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname)); // This automatically serves style.css and script.js
+
+// 1. FORCES the server to serve your CSS and JS files so it doesn't look like 1998
+app.use(express.static(path.join(__dirname, ".")));
+
+// =======================
+// PAGE ROUTES
+// =======================
+
+// 2. FORCES the server to show index.html when you visit the main link
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// 3. Automatically handles other pages like login.html or send.html
+app.get("/:page", (req, res, next) => {
+    const page = req.params.page;
+    if (page.endsWith(".html") || page.includes(".")) {
+        res.sendFile(path.join(__dirname, page), (err) => {
+            if (err) next(); // If file doesn't exist, try API routes
+        });
+    } else {
+        next();
+    }
+});
 
 // =======================
 // DATABASE API ROUTES
@@ -77,5 +100,4 @@ app.post("/deleteLevel", async (req, res) => {
     res.json({ success: true });
 });
 
-// Start Server
 module.exports = app;
