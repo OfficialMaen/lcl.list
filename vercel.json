@@ -2,6 +2,9 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" }
+    {
+      "source": "/(register|login|leaderboard|submitLevel|submissions|approveLevel|moveUp|moveDown|deleteLevel)",
+      "destination": "/server.js"
+    }
   ]
 }
