@@ -1,13 +1,10 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/(register|login|leaderboard|submitLevel|submissions|approveLevel|deleteLevel)",
       "destination": "/server.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
     }
   ]
 }
