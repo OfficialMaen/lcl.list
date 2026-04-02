@@ -17,16 +17,27 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "maencopra@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 
-// Middleware
+// ===========================
+// MIDDLEWARE & STATIC FILES
+// ===========================
 app.use(cors());
 app.use(bodyParser.json());
+
+// THIS LINE FIXES THE "1998 LOOK" (Makes style.css and script.js work)
 app.use(express.static(path.join(__dirname, ".")));
 
 // =======================
-// HOME ROUTE (FIXES THE "CANNOT GET /" ERROR)
+// PAGE ROUTING (FIXES THE "CANNOT GET /SEND.HTML" ERROR)
 // =======================
+
+// Show index.html on home page
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// Automatically handle any .html file (rules.html, send.html, login.html, etc.)
+app.get("/:page.html", (req, res) => {
+    res.sendFile(path.join(__dirname, req.params.page + ".html"));
 });
 
 // =======================
@@ -85,7 +96,7 @@ app.post("/submitLevel", async (req, res) => {
     }
 });
 
-// Get Submissions (for admin)
+// Admin: Get Submissions
 app.get("/submissions", async (req, res) => {
     try {
         const { data } = await supabase.from("submissions").select("*");
@@ -95,7 +106,7 @@ app.get("/submissions", async (req, res) => {
     }
 });
 
-// Approve Level
+// Admin: Approve
 app.post("/approveLevel", async (req, res) => {
     const { index } = req.body;
     try {
@@ -112,7 +123,7 @@ app.post("/approveLevel", async (req, res) => {
     }
 });
 
-// Delete Level
+// Admin: Delete
 app.post("/deleteLevel", async (req, res) => {
     const { index } = req.body;
     try {
