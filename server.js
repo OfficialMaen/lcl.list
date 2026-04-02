@@ -1,7 +1,12 @@
 // =======================
 // EXPRESS SERVER WITH SUPABASE (VERCEL OPTIMIZED)
 // =======================
+const path = require("path");
 
+// This tells the server to show your index.html when you visit the site
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
