@@ -1,20 +1,50 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const path = require("path");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
-// --- SUPABASE SETUP ---
+// ===========================
+// SUPABASE SETUP
+// ===========================
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "maencopra@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// --- AUTH ROUTES ---
+// THIS LINE FIXES THE "1998 LOOK": It tells the server where the CSS/JS files are
+app.use(express.static(path.join(__dirname, ".")));
+
+// =======================
+// PAGE ROUTING (Fixes "Cannot GET" errors)
+// =======================
+
+// 1. Show Home Page
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// 2. Show other HTML pages automatically
+app.get("/:page", (req, res, next) => {
+    const page = req.params.page;
+    if (page.endsWith(".html")) {
+        res.sendFile(path.join(__dirname, page));
+    } else {
+        next();
+    }
+});
+
+// =======================
+// DATABASE API (The Long Logic)
+// =======================
+
+// User Auth
 app.post("/api/register", async (req, res) => {
     const { username, email, password } = req.body;
     try {
@@ -35,7 +65,7 @@ app.post("/api/login", async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// --- LEADERBOARD ROUTES ---
+// Leaderboard & Move Up/Down
 app.get("/api/leaderboard", async (req, res) => {
     const { data } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
     res.json(data || []);
@@ -61,7 +91,7 @@ app.post("/api/moveDown", async (req, res) => {
     res.json({ success: true });
 });
 
-// --- ADMIN ROUTES ---
+// Admin Submissions & Approve
 app.post("/api/submitLevel", async (req, res) => {
     const { name, id, creator, video } = req.body;
     await supabase.from("submissions").insert([{ name, level_id: id, creator, video }]);
