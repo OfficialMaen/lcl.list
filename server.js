@@ -4,10 +4,6 @@ const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
-
-// ==========================================
-// DATABASE CONNECTION (The Long Engine)
-// ==========================================
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "maencopra@gmail.com";
@@ -16,11 +12,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 app.use(cors());
 app.use(bodyParser.json());
 
-// ==========================================
-// USER AUTHENTICATION
-// ==========================================
-
-app.post("/register", async (req, res) => {
+// ALL ROUTES START WITH /api/
+app.post("/api/register", async (req, res) => {
     const { username, email, password } = req.body;
     try {
         const { data: existing } = await supabase.from("users").select("id").eq("email", email).maybeSingle();
@@ -30,7 +23,7 @@ app.post("/register", async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) return res.json({ success: true, username: "Admin", admin: true });
     try {
@@ -40,58 +33,46 @@ app.post("/login", async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// ==========================================
-// LEADERBOARD & RANKING (The Long Logic)
-// ==========================================
-
-app.get("/leaderboard", async (req, res) => {
+app.get("/api/leaderboard", async (req, res) => {
     const { data } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
     res.json(data || []);
 });
 
-app.post("/moveUp", async (req, res) => {
+app.post("/api/moveUp", async (req, res) => {
     const { index } = req.body;
-    try {
-        const { data: list } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
-        if (!list || index <= 0) return res.json({ success: false });
-        const current = list[index], prev = list[index - 1];
-        await supabase.from("leaderboard").update({ position: prev.position }).eq("id", current.id);
-        await supabase.from("leaderboard").update({ position: current.position }).eq("id", prev.id);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    const { data: list } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
+    if (!list || index <= 0) return res.json({ success: false });
+    const current = list[index], prev = list[index - 1];
+    await supabase.from("leaderboard").update({ position: prev.position }).eq("id", current.id);
+    await supabase.from("leaderboard").update({ position: current.position }).eq("id", prev.id);
+    res.json({ success: true });
 });
 
-app.post("/moveDown", async (req, res) => {
+app.post("/api/moveDown", async (req, res) => {
     const { index } = req.body;
-    try {
-        const { data: list } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
-        if (!list || index >= list.length - 1) return res.json({ success: false });
-        const current = list[index], next = list[index + 1];
-        await supabase.from("leaderboard").update({ position: next.position }).eq("id", current.id);
-        await supabase.from("leaderboard").update({ position: current.position }).eq("id", next.id);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    const { data: list } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
+    if (!list || index >= list.length - 1) return res.json({ success: false });
+    const current = list[index], next = list[index + 1];
+    await supabase.from("leaderboard").update({ position: next.position }).eq("id", current.id);
+    await supabase.from("leaderboard").update({ position: current.position }).eq("id", next.id);
+    res.json({ success: true });
 });
 
-// ==========================================
-// ADMIN & SUBMISSIONS
-// ==========================================
-
-app.post("/submitLevel", async (req, res) => {
+app.post("/api/submitLevel", async (req, res) => {
     const { name, id, creator, video } = req.body;
     await supabase.from("submissions").insert([{ name, level_id: id, creator, video }]);
     res.json({ success: true });
 });
 
-app.get("/submissions", async (req, res) => {
+app.get("/api/submissions", async (req, res) => {
     const { data } = await supabase.from("submissions").select("*");
     res.json(data || []);
 });
 
-app.post("/approveLevel", async (req, res) => {
+app.post("/api/approveLevel", async (req, res) => {
     const { index } = req.body;
     const { data: subs } = await supabase.from("submissions").select("*");
-    if (!subs || !subs[index]) return res.json({ success: false });
+    if (!subs[index]) return res.json({ success: false });
     const lvl = subs[index];
     const { count } = await supabase.from("leaderboard").select('*', { count: 'exact', head: true });
     await supabase.from("leaderboard").insert([{ name: lvl.name, level_id: lvl.level_id, creator: lvl.creator, video: lvl.video, position: (count || 0) + 1 }]);
@@ -99,7 +80,7 @@ app.post("/approveLevel", async (req, res) => {
     res.json({ success: true });
 });
 
-app.post("/deleteLevel", async (req, res) => {
+app.post("/api/deleteLevel", async (req, res) => {
     const { index } = req.body;
     const { data: list } = await supabase.from("leaderboard").select("id").order("position", { ascending: true });
     if (list[index]) await supabase.from("leaderboard").delete().eq("id", list[index].id);
