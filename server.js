@@ -1,12 +1,13 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const path = require("path");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
 // ===========================
-// SUPABASE SETUP
+// DATABASE SETUP
 // ===========================
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -17,11 +18,29 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 app.use(cors());
 app.use(bodyParser.json());
 
-// =======================
-// DATABASE API ROUTES
-// =======================
+// THIS LINE FIXES THE "1998 LOOK": It serves your CSS and JS files
+app.use(express.static(path.join(__dirname, ".")));
 
-// Register & Login
+// ==========================================
+// PAGE ROUTING (Fixes "Cannot GET" Errors)
+// ==========================================
+
+// Main Home Page
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// Other Pages (Automatically handles .html)
+app.get("/rules", (req, res) => res.sendFile(path.join(__dirname, "rules.html")));
+app.get("/send", (req, res) => res.sendFile(path.join(__dirname, "send.html")));
+app.get("/login.html", (req, res) => res.sendFile(path.join(__dirname, "login.html")));
+app.get("/register.html", (req, res) => res.sendFile(path.join(__dirname, "register.html")));
+
+// ==========================================
+// DATABASE API (THE LONG SCRIPT FEATURES)
+// ==========================================
+
+// Login & Register
 app.post("/register", async (req, res) => {
     const { username, email, password } = req.body;
     try {
@@ -42,47 +61,12 @@ app.post("/login", async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// Leaderboard & Submissions
+// Leaderboard & Ranking (Up/Down)
 app.get("/leaderboard", async (req, res) => {
     const { data } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
     res.json(data || []);
 });
 
-app.post("/submitLevel", async (req, res) => {
-    const { name, id, creator, video } = req.body;
-    await supabase.from("submissions").insert([{ name, level_id: id, creator, video }]);
-    res.json({ success: true });
-});
-
-app.get("/submissions", async (req, res) => {
-    const { data } = await supabase.from("submissions").select("*");
-    res.json(data || []);
-});
-
-// Approval & Deletion
-app.post("/approveLevel", async (req, res) => {
-    const { index } = req.body;
-    const { data: subs } = await supabase.from("submissions").select("*");
-    if (!subs || !subs[index]) return res.json({ success: false });
-    const lvl = subs[index];
-    const { count } = await supabase.from("leaderboard").select('*', { count: 'exact', head: true });
-    await supabase.from("leaderboard").insert([{ name: lvl.name, level_id: lvl.level_id, creator: lvl.creator, video: lvl.video, position: (count || 0) + 1 }]);
-    await supabase.from("submissions").delete().eq("id", lvl.id);
-    res.json({ success: true });
-});
-
-app.post("/deleteLevel", async (req, res) => {
-    const { index } = req.body;
-    const { data: list } = await supabase.from("leaderboard").select("id").order("position", { ascending: true });
-    if (list && list[index]) {
-        await supabase.from("leaderboard").delete().eq("id", list[index].id);
-        res.json({ success: true });
-    } else { res.json({ success: false }); }
-});
-
-// ==========================================
-// RANKING CONTROLS (MOVE UP / MOVE DOWN)
-// ==========================================
 app.post("/moveUp", async (req, res) => {
     const { index } = req.body;
     const { data: list } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
@@ -102,6 +86,36 @@ app.post("/moveDown", async (req, res) => {
     const next = list[index + 1];
     await supabase.from("leaderboard").update({ position: next.position }).eq("id", current.id);
     await supabase.from("leaderboard").update({ position: current.position }).eq("id", next.id);
+    res.json({ success: true });
+});
+
+// Admin Submissions & Approve
+app.post("/submitLevel", async (req, res) => {
+    const { name, id, creator, video } = req.body;
+    await supabase.from("submissions").insert([{ name, level_id: id, creator, video }]);
+    res.json({ success: true });
+});
+
+app.get("/submissions", async (req, res) => {
+    const { data } = await supabase.from("submissions").select("*");
+    res.json(data || []);
+});
+
+app.post("/approveLevel", async (req, res) => {
+    const { index } = req.body;
+    const { data: subs } = await supabase.from("submissions").select("*");
+    if (!subs[index]) return res.json({ success: false });
+    const lvl = subs[index];
+    const { count } = await supabase.from("leaderboard").select('*', { count: 'exact', head: true });
+    await supabase.from("leaderboard").insert([{ name: lvl.name, level_id: lvl.level_id, creator: lvl.creator, video: lvl.video, position: (count || 0) + 1 }]);
+    await supabase.from("submissions").delete().eq("id", lvl.id);
+    res.json({ success: true });
+});
+
+app.post("/deleteLevel", async (req, res) => {
+    const { index } = req.body;
+    const { data: list } = await supabase.from("leaderboard").select("id").order("position", { ascending: true });
+    if (list[index]) await supabase.from("leaderboard").delete().eq("id", list[index].id);
     res.json({ success: true });
 });
 
