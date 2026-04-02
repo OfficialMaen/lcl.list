@@ -4,6 +4,8 @@ const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
+
+// --- SUPABASE SETUP ---
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "maencopra@gmail.com";
@@ -74,7 +76,7 @@ app.get("/api/submissions", async (req, res) => {
 app.post("/api/approveLevel", async (req, res) => {
     const { index } = req.body;
     const { data: subs } = await supabase.from("submissions").select("*");
-    if (!subs[index]) return res.json({ success: false });
+    if (!subs || !subs[index]) return res.json({ success: false });
     const lvl = subs[index];
     const { count } = await supabase.from("leaderboard").select('*', { count: 'exact', head: true });
     await supabase.from("leaderboard").insert([{ name: lvl.name, level_id: lvl.level_id, creator: lvl.creator, video: lvl.video, position: (count || 0) + 1 }]);
