@@ -1,13 +1,15 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "rewrites": [
-    {
-      "source": "/(register|login|leaderboard|submitLevel|submissions|approveLevel|moveUp|moveDown|deleteLevel)",
-      "destination": "/server.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
-    }
+    { "source": "/register", "destination": "/server.js" },
+    { "source": "/login", "destination": "/server.js" },
+    { "source": "/leaderboard", "destination": "/server.js" },
+    { "source": "/submitLevel", "destination": "/server.js" },
+    { "source": "/submissions", "destination": "/server.js" },
+    { "source": "/approveLevel", "destination": "/server.js" },
+    { "source": "/moveUp", "destination": "/server.js" },
+    { "source": "/moveDown", "destination": "/server.js" },
+    { "source": "/deleteLevel", "destination": "/server.js" }
   ]
 }
