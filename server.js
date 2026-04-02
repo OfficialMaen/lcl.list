@@ -12,7 +12,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "maenissocool";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Auth
+// --- AUTH ROUTES ---
 app.post("/api/register", async (req, res) => {
     const { username, email, password } = req.body;
     try {
@@ -33,13 +33,12 @@ app.post("/api/login", async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// Leaderboard
+// --- LEADERBOARD ROUTES ---
 app.get("/api/leaderboard", async (req, res) => {
     const { data } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
     res.json(data || []);
 });
 
-// Admin Logic (Long Script)
 app.post("/api/moveUp", async (req, res) => {
     const { index } = req.body;
     const { data: list } = await supabase.from("leaderboard").select("*").order("position", { ascending: true });
@@ -60,6 +59,7 @@ app.post("/api/moveDown", async (req, res) => {
     res.json({ success: true });
 });
 
+// --- ADMIN ROUTES ---
 app.post("/api/submitLevel", async (req, res) => {
     const { name, id, creator, video } = req.body;
     await supabase.from("submissions").insert([{ name, level_id: id, creator, video }]);
